@@ -1,5 +1,5 @@
 //
-// © 2024-present https://github.com/cengiz-pz
+// 2024-present https://github.com/cengiz-pz
 //
 
 package org.godotengine.plugin.android.admob;
@@ -92,6 +92,13 @@ public class AdmobPlugin extends GodotPlugin {
 	private static final String SIGNAL_REWARDED_INTERSTITIAL_AD_FAILED_TO_SHOW_FULL_SCREEN_CONTENT = "rewarded_interstitial_ad_failed_to_show_full_screen_content";
 	private static final String SIGNAL_REWARDED_INTERSTITIAL_AD_DISMISSED_FULL_SCREEN_CONTENT = "rewarded_interstitial_ad_dismissed_full_screen_content";
 	private static final String SIGNAL_REWARDED_INTERSTITIAL_AD_USER_EARNED_REWARD = "rewarded_interstitial_ad_user_earned_reward";
+	private static final String SIGNAL_APP_OPEN_AD_LOADED = "app_open_ad_loaded";
+	private static final String SIGNAL_APP_OPEN_AD_FAILED_TO_LOAD = "app_open_ad_failed_to_load";
+	private static final String SIGNAL_APP_OPEN_AD_IMPRESSION = "app_open_ad_impression";
+	private static final String SIGNAL_APP_OPEN_AD_CLICKED = "app_open_ad_clicked";
+	private static final String SIGNAL_APP_OPEN_AD_SHOWED_FULL_SCREEN_CONTENT = "app_open_ad_showed_full_screen_content";
+	private static final String SIGNAL_APP_OPEN_AD_FAILED_TO_SHOW_FULL_SCREEN_CONTENT = "app_open_ad_failed_to_show_full_screen_content";
+	private static final String SIGNAL_APP_OPEN_AD_DISMISSED_FULL_SCREEN_CONTENT = "app_open_ad_dismissed_full_screen_content";
 	private static final String SIGNAL_CONSENT_FORM_LOADED = "consent_form_loaded";
 	private static final String SIGNAL_CONSENT_FORM_FAILED_TO_LOAD = "consent_form_failed_to_load";
 	private static final String SIGNAL_CONSENT_FORM_DISMISSED = "consent_form_dismissed";
@@ -121,6 +128,7 @@ public class AdmobPlugin extends GodotPlugin {
 	private int interstitialAdIdSequence;
 	private int rewardedAdIdSequence;
 	private int rewardedInterstitialAdIdSequence;
+	private int appOpenAdIdSequence;
 
 	private boolean isInitialized;
 
@@ -128,6 +136,7 @@ public class AdmobPlugin extends GodotPlugin {
 	private Map<String, Interstitial> interstitialAds;
 	private Map<String, RewardedVideo> rewardedAds;
 	private Map<String, RewardedInterstitial> rewardedInterstitialAds;
+	private Map<String, AppOpen> appOpenAds;
 
 	private ConsentForm consentForm;
 
@@ -139,6 +148,7 @@ public class AdmobPlugin extends GodotPlugin {
 		interstitialAds = new HashMap<>();
 		rewardedAds = new HashMap<>();
 		rewardedInterstitialAds = new HashMap<>();
+		appOpenAds = new HashMap<>();
 
 		isInitialized = false;
 	}
@@ -191,6 +201,14 @@ public class AdmobPlugin extends GodotPlugin {
 		signals.add(new SignalInfo(SIGNAL_REWARDED_INTERSTITIAL_AD_DISMISSED_FULL_SCREEN_CONTENT, String.class));
 		signals.add(new SignalInfo(SIGNAL_REWARDED_INTERSTITIAL_AD_USER_EARNED_REWARD, String.class, Dictionary.class));
 		
+		signals.add(new SignalInfo(SIGNAL_APP_OPEN_AD_LOADED, String.class));
+		signals.add(new SignalInfo(SIGNAL_APP_OPEN_AD_FAILED_TO_LOAD, String.class, Dictionary.class));
+		signals.add(new SignalInfo(SIGNAL_APP_OPEN_AD_IMPRESSION, String.class));
+		signals.add(new SignalInfo(SIGNAL_APP_OPEN_AD_CLICKED, String.class));
+		signals.add(new SignalInfo(SIGNAL_APP_OPEN_AD_SHOWED_FULL_SCREEN_CONTENT, String.class));
+		signals.add(new SignalInfo(SIGNAL_APP_OPEN_AD_FAILED_TO_SHOW_FULL_SCREEN_CONTENT, String.class, Dictionary.class));
+		signals.add(new SignalInfo(SIGNAL_APP_OPEN_AD_DISMISSED_FULL_SCREEN_CONTENT, String.class));
+		
 		signals.add(new SignalInfo(SIGNAL_CONSENT_FORM_LOADED));
 		signals.add(new SignalInfo(SIGNAL_CONSENT_FORM_FAILED_TO_LOAD, Dictionary.class));
 		signals.add(new SignalInfo(SIGNAL_CONSENT_FORM_DISMISSED, Dictionary.class));
@@ -209,11 +227,13 @@ public class AdmobPlugin extends GodotPlugin {
 		interstitialAdIdSequence = 0;
 		rewardedAdIdSequence = 0;
 		rewardedInterstitialAdIdSequence = 0;
+		appOpenAdIdSequence = 0;
 
 		bannerAds.clear();
 		interstitialAds.clear();
 		rewardedAds.clear();
 		rewardedInterstitialAds.clear();
+		appOpenAds.clear();
 
 		isInitialized = false;
 
@@ -691,6 +711,90 @@ public class AdmobPlugin extends GodotPlugin {
 		}
 		else {
 			Log.e(LOG_TAG, String.format("remove_rewarded_interstitial_ad(): Error: ad %s not found", adId));
+		}
+	}
+
+	@UsedByGodot
+	public void load_app_open_ad(Dictionary adData) {
+		if (isInitialized) {
+			Log.d(LOG_TAG, "load_app_open_ad()");
+
+			if (adData.containsKey("ad_unit_id")) {
+				String adUnitId = (String) adData.get("ad_unit_id");
+				String adId = String.format("%s-%d", adUnitId, ++appOpenAdIdSequence);
+
+				activity.runOnUiThread(() -> {
+					AppOpen ad = new AppOpen(adId, adUnitId, createAdRequest(adData), activity, new AppOpen.AppOpenListener() {
+						@Override
+						public void onAppOpenLoaded(String adId) {
+							emitSignal(SIGNAL_APP_OPEN_AD_LOADED, adId);
+						}
+
+						@Override
+						public void onAppOpenFailedToLoad(String adId, LoadAdError loadAdError) {
+							emitSignal(SIGNAL_APP_OPEN_AD_FAILED_TO_LOAD, adId, convert(loadAdError));
+						}
+
+						@Override
+						public void onAppOpenOpened(String adId) {
+							emitSignal(SIGNAL_APP_OPEN_AD_SHOWED_FULL_SCREEN_CONTENT, adId);
+						}
+
+						@Override
+						public void onAppOpenFailedToShow(String adId, AdError adError) {
+							emitSignal(SIGNAL_APP_OPEN_AD_FAILED_TO_SHOW_FULL_SCREEN_CONTENT, adId, convert(adError));
+						}
+
+						@Override
+						public void onAppOpenClosed(String adId) {
+							emitSignal(SIGNAL_APP_OPEN_AD_DISMISSED_FULL_SCREEN_CONTENT, adId);
+						}
+
+						@Override
+						public void onAppOpenClicked(String adId) {
+							emitSignal(SIGNAL_APP_OPEN_AD_CLICKED, adId);
+						}
+
+						@Override
+						public void onAppOpenImpression(String adId) {
+							emitSignal(SIGNAL_APP_OPEN_AD_IMPRESSION, adId);
+						}
+					});
+					appOpenAds.put(adId, ad);
+					Log.d(LOG_TAG, String.format("load_app_open_ad(): %s", adId));
+					ad.load();
+				});
+			} else {
+				Log.e(LOG_TAG, "load_app_open_ad(): Error: Ad unit id is required!");
+			}
+		}
+		else {
+			Log.e(LOG_TAG, "load_app_open_ad(): Error: Plugin is not initialized!");
+		}
+	}
+
+	@UsedByGodot
+	public void show_app_open_ad(String adId) {
+		activity.runOnUiThread(() -> {
+			if (appOpenAds.containsKey(adId)) {
+				Log.d(LOG_TAG, String.format("show_app_open_ad(): %s", adId));
+				AppOpen ad = appOpenAds.get(adId);
+				ad.show();
+			}
+			else {
+				Log.e(LOG_TAG, String.format("show_app_open_ad(): Error: ad %s not found", adId));
+			}
+		});
+	}
+
+	@UsedByGodot
+	public void remove_app_open_ad(String adId) {
+		if (appOpenAds.containsKey(adId)) {
+			Log.d(LOG_TAG, String.format("remove_app_open_ad(): %s", adId));
+			appOpenAds.remove(adId);
+		}
+		else {
+			Log.e(LOG_TAG, String.format("remove_app_open_ad(): Error: ad %s not found", adId));
 		}
 	}
 

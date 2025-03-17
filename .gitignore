@@ -21,6 +21,7 @@ out/
 .gradle/
 gradle/
 build/
+gradle-*.zip
 
 # Local configuration file (sdk path, etc)
 local.properties

@@ -92,6 +92,13 @@ Steps:
 	- `rewarded_interstitial_ad_failed_to_show_full_screen_content(ad_id: String, error_data: AdError)`
 	- `rewarded_interstitial_ad_dismissed_full_screen_content(ad_id: String)`
 	- `rewarded_interstitial_ad_user_earned_reward(ad_id: String, reward_data: RewardItem)`
+	- `app_open_ad_loaded(ad_id: String)`
+	- `app_open_ad_failed_to_load(ad_id: String, error_data: LoadAdError)`
+	- `app_open_ad_impression(ad_id: String)`
+	- `app_open_ad_clicked(ad_id: String)`
+	- `app_open_ad_showed_full_screen_content(ad_id: String)`
+	- `app_open_ad_failed_to_show_full_screen_content(ad_id: String, error_data: AdError)`
+	- `app_open_ad_dismissed_full_screen_content(ad_id: String)`
 	- `consent_form_loaded`
 	- `consent_form_dismissed(error_data: FormError)`
 	- `consent_form_failed_to_load(error_data: FormError)`
@@ -107,6 +114,7 @@ Steps:
 	- `load_interstitia_adl(ad_request: LoadAdRequest)`
 	- `load_rewarded_ad(ad_request: LoadAdRequest)`
 	- `load_rewarded_interstitial_ad(ad_request: LoadAdRequest)`
+	- `load_app_open_ad(ad_request: LoadAdRequest)`
 - the `Admob` node will emit the following signals once ads have been loaded or failed to load:
 	- `banner_ad_loaded(ad_id: String)`
 	- `banner_ad_failed_to_load(ad_id: String, error_data: LoadAdError)`
@@ -116,11 +124,20 @@ Steps:
 	- `rewarded_ad_failed_to_load(ad_id: String, error_data: LoadAdError)`
 	- `rewarded_interstitial_ad_loaded(ad_id: String)`
 	- `rewarded_interstitial_ad_failed_to_load(ad_id: String, error_data: LoadAdError)`
+	- `app_open_ad_loaded(ad_id: String)`
+	- `app_open_ad_failed_to_load(ad_id: String, error_data: LoadAdError)`
 - once ads have been loaded, call corresponding `show_*()` method from the `Admob` node with the `ad_id` received:
 	- `show_banner_ad(ad_id: String)`
 	- `show_interstitial_ad(ad_id: String)`
 	- `show_rewarded_ad(ad_id: String)`
 	- `show_rewarded_interstitial_ad(ad_id: String)`
+	- `show_app_open_ad(ad_id: String)`
+- to remove ads, call corresponding `remove_*()` method from the `Admob` node with the `ad_id` received:
+	- `remove_banner_ad(ad_id: String)`
+	- `remove_interstitial_ad(ad_id: String)`
+	- `remove_rewarded_ad(ad_id: String)`
+	- `remove_rewarded_interstitial_ad(ad_id: String)`
+	- `remove_app_open_ad(ad_id: String)`
 
 ### ![](admob/addon_template/icon.png?raw=true) Banner Size
 - The following methods return the size of a Banner ad:
